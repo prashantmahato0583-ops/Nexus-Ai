@@ -1,0 +1,51 @@
+from flask import Flask, request, redirect
+from flask_sqlalchemy import SQLAlchemy
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+# Database Model
+class AdminSettings(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    current_price = db.Column(db.Float, default=99.0)
+
+@app.route('/')
+def home():
+    settings = AdminSettings.query.first()
+    price = settings.current_price if settings else "99.0"
+    return f'''
+        <body style="font-family: sans-serif; background-color: #f4f4f9; text-align: center; padding: 50px;">
+            <div style="background: white; max-width: 400px; margin: auto; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                <h1>⚙️ Admin Dashboard</h1>
+                <p>Current Price: <strong style="color: blue;">₹{price}</strong></p>
+                <form action="/update-price" method="POST">
+                    <input type="number" name="n_price" placeholder="New Price" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+                    <button type="submit" style="padding: 10px 20px; background: green; color: white; border: none; border-radius: 5px; cursor: pointer;">Update</button>
+                </form>
+            </div>
+        </body>
+    '''
+
+@app.route('/update-price', methods=['POST'])
+def update_price():
+    new_p = request.form.get('n_price')
+    if new_p:
+        s = AdminSettings.query.first()
+        if not s:
+            s = AdminSettings(current_price=float(new_p))
+            db.session.add(s)
+        else:
+            s.current_price = float(new_p)
+        db.session.commit()
+    return redirect('/')
+
+if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
+        if not AdminSettings.query.first():
+            db.session.add(AdminSettings(current_price=99.0))
+            db.session.commit()
+    print("✅ Dashboard Taiyar Hai! http://127.0.0.1:5000 kholo.")
+    app.run(debug=True)
