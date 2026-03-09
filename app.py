@@ -1,75 +1,61 @@
-from flask import Flask, render_template_string, request
+from flask import Flask, render_template_string, request, session, redirect
 
 app = Flask(__name__)
+app.secret_key = "nexus_ultra_secure_99"
 
-# --- AAPKA DATA ---
-ADMIN_GMAIL = "nexusai119@gmail.com"
-ADMIN_PASSWORD = "prashant@123456"
-ADMIN_PHONE = "7903530625"
+# --- DATABASE (Fake for now) ---
+users_db = {} # Yahan users ka data save hoga
+ADMIN_DATA = {"email": "nexusai119@gmail.com", "pass": "prashant@123456"}
 
-# --- ALL-IN-ONE DESIGN ---
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Nexus AI Project</title>
+    <title>Nexus AI Official</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body { background: #0f172a; color: white; font-family: sans-serif; text-align: center; padding-top: 50px; }
-        .container { background: #1e293b; display: inline-block; padding: 30px; border-radius: 15px; border: 2px solid #38bdf8; width: 320px; position: relative; }
-        .switch-tabs { margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; }
-        .tab { padding: 8px 15px; cursor: pointer; border-radius: 20px; font-size: 12px; border: 1px solid #38bdf8; background: transparent; color: #38bdf8; }
-        .tab.active { background: #38bdf8; color: #0f172a; font-weight: bold; }
-        input { display: block; width: 90%; padding: 12px; margin: 15px auto; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; }
-        button { background: #38bdf8; color: #0f172a; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; }
+        .card { background: #1e293b; display: inline-block; padding: 30px; border-radius: 15px; border: 2px solid #38bdf8; width: 320px; }
+        input { display: block; width: 90%; padding: 12px; margin: 10px auto; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; }
+        button { background: #38bdf8; color: #0f172a; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
+        .toggle-link { color: #38bdf8; font-size: 12px; cursor: pointer; text-decoration: underline; display: block; margin-top: 15px; }
         .hidden { display: none; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="switch-tabs">
-            <button class="tab active" id="userBtn" onclick="showMode('user')">User Portal</button>
-            <button class="tab" id="adminBtn" onclick="showMode('admin')">Admin Panel</button>
+    <div class="card">
+        <div id="authBox">
+            <h2 id="authTitle">Nexus Sign Up</h2>
+            <input type="text" id="uName" placeholder="Full Name">
+            <input type="email" id="uEmail" placeholder="Email Address">
+            <input type="password" id="uPass" placeholder="Create Password">
+            <button onclick="handleAuth()">Submit</button>
+            <p class="toggle-link" onclick="toggleAuth()">Already have an account? Login</p>
         </div>
 
-        <div id="userSection">
+        <div id="portalBox" class="hidden">
             <h2 style="color:#38bdf8;">🚀 Nexus AI Portal</h2>
+            <p style="font-size:12px;">Welcome to Automation World</p>
             <input type="text" placeholder="Instagram ID">
-            <input type="password" placeholder="Password">
-            <button onclick="alert('Redirecting to Payment...')">Login & Pay ₹99</button>
-        </div>
-
-        <div id="adminSection" class="hidden">
-            <h2 style="color:#fbbf24;">🛡️ Nexus Admin</h2>
-            <input type="email" id="admEmail" placeholder="Admin Gmail">
-            <input type="password" id="admPass" placeholder="Password">
-            <button style="background:#fbbf24;" onclick="checkAdmin()">Unlock Dashboard</button>
-            <p style="font-size:10px; margin-top:10px; cursor:pointer;" onclick="alert('OTP sent to {{phone}}')">Forgot Password?</p>
+            <input type="password" placeholder="Instagram Password">
+            <button onclick="alert('Redirecting to Payment Gateway...')">Login & Pay ₹99</button>
         </div>
     </div>
 
+    <button style="position:fixed; bottom:10px; right:10px; width:auto; font-size:10px; padding:5px 10px;" onclick="location.href='/admin'">🛡️ Admin</button>
+
     <script>
-        function showMode(mode) {
-            if(mode === 'user') {
-                document.getElementById('userSection').classList.remove('hidden');
-                document.getElementById('adminSection').classList.add('hidden');
-                document.getElementById('userBtn').classList.add('active');
-                document.getElementById('adminBtn').classList.remove('active');
-            } else {
-                document.getElementById('adminSection').classList.remove('hidden');
-                document.getElementById('userSection').classList.add('hidden');
-                document.getElementById('adminBtn').classList.add('active');
-                document.getElementById('userBtn').classList.remove('active');
-            }
+        let isLogin = false;
+        function toggleAuth() {
+            isLogin = !isLogin;
+            document.getElementById('authTitle').innerText = isLogin ? "Nexus Login" : "Nexus Sign Up";
+            document.getElementById('uName').style.display = isLogin ? "none" : "block";
         }
-        function checkAdmin() {
-            let e = document.getElementById('admEmail').value;
-            let p = document.getElementById('admPass').value;
-            if(e === "{{email}}" && p === "{{pw}}") {
-                alert("Welcome Boss!");
-            } else {
-                alert("Access Denied!");
-            }
+        function handleAuth() {
+            // Abhi ke liye hum direct andar bhej rahe hain
+            alert(isLogin ? "Login Successful!" : "Account Created!");
+            document.getElementById('authBox').classList.add('hidden');
+            document.getElementById('portalBox').classList.remove('hidden');
         }
     </script>
 </body>
@@ -77,8 +63,12 @@ HTML_TEMPLATE = """
 """
 
 @app.route('/')
-def home():
-    return render_template_string(HTML_TEMPLATE, email=ADMIN_GMAIL, pw=ADMIN_PASSWORD, phone=ADMIN_PHONE)
+def index():
+    return render_template_string(HTML_TEMPLATE)
+
+@app.route('/admin')
+def admin():
+    return f"<h1>Admin Panel for {ADMIN_DATA['email']}</h1><p>Check Users List Here.</p>"
 
 if __name__ == "__main__":
     app.run(debug=True)
