@@ -1,5 +1,2 @@
-Flask
-gunicorn
-gspread
-oauth2client
-google-auth
+instagrapi
+requests
